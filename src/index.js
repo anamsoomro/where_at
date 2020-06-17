@@ -22,10 +22,6 @@ function initMap () {
       zoom: 4,
       center: location
     });
-
-
-  
-
 }
 
 
