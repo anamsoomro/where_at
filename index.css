@@ -1,0 +1,15 @@
+*{
+  margin: 0;
+  padding: 0;
+}
+
+#view-map {
+  height: 100vh;
+  width: 50%;
+  float: left;
+}
+
+#guess-map {
+  height: 100vh;
+  width: 50%;
+}
