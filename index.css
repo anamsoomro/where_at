@@ -4,12 +4,12 @@
 }
 
 #view-map {
-  height: 100vh;
+  height: 90vh;
   width: 50%;
   float: left;
 }
 
 #guess-map {
-  height: 100vh;
+  height: 90vh;
   width: 50%;
 }
