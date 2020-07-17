@@ -2,99 +2,100 @@ console.log("working")
 console.log(api_key)
 
 
+
+
 function initMap () {
-
-  // const location = {lat: 51.9851, lng: 5.8987}
-  const location = new google.maps.LatLng(51.9851, 5.8987)
-
-  var panorama = new google.maps.StreetViewPanorama(
+  let location = new google.maps.LatLng(51.9851, 5.8987)
+  let panorama = new google.maps.StreetViewPanorama(
     document.getElementById('view-map'), {
       position: location,
-      pov: {
-        heading: 0,
-        pitch: 0
-      },
-      visible: true
-    });
+      disableDefaultUI: true
+    }
+  );
 
-  var map = new google.maps.Map(
+  let map = new google.maps.Map(
     document.getElementById('guess-map'), {
       zoom: 2,
-      center: {lat: 0, lng: 0}
-    });
-
-
+      center: {lat: 0, lng: 0}, 
+      disableDefaultUI: true
+    }
+  );
+  
+  let markerBounds = new google.maps.LatLngBounds();
+  markerBounds.extend(location)
 
   map.addListener('bounds_changed', () => {
     console.log("moving")
   })
 
+  let marker = false
+  let guess
+  let guessed = false
   map.addListener('click', function(event) {
-    let guess = new google.maps.LatLng(event.latLng.lat(), event.latLng.lng())
-    // let lat = event.latLng.lat()
-    // let lon = event.latLng.lng()
-    // console.log({lat, lon});
-    // console.log(calcDistance({lat,lon}, {lat: location.lat(), lon: location.lng()} ));
-    // console.log((event.latLng));
-    // console.log((location));
-    let poly = new google.maps.Polyline({
-      path: [location, guess],
+    guessed = true
+    guess = new google.maps.LatLng(event.latLng.lat(), event.latLng.lng())
+    marker && marker.setMap(null) // remove prev marker if exists
+    marker = new google.maps.Marker({
+      position: guess,
       map: map,
-      strokeColor: '#547881',
-      strokeOpacity: 1.0,
-      strokeWeight: 3
+      title: 'Hello World!',
+      draggable: true,
+      animation: google.maps.Animation.DROP,
+    });
+    let submit = document.getElementById('submit')
+    submit.addEventListener('click', () => {
+      marker && marker.setMap(null) // remove prev marker if exists
+      let poly = new google.maps.Polyline({
+        path: [location, guess],
+        map: map,
+        strokeColor: '#547881',
+        strokeOpacity: 1.0,
+        strokeWeight: 3
+      })
+
+      let midpoint = calcMidpoint(guess, location)
+      let infowindow = new google.maps.InfoWindow({
+        content: `You were off by ${calcDistance(location, guess)} miles.`,
+        map: map,
+        position: midpoint
+      });
+      let msg = document.getElementById('msg')
+      msg.innerText = `You were off by ${calcDistance(location, guess)} miles.`
+      markerBounds.extend(guess)
+      map.fitBounds(markerBounds)
+      document.getElementById('guess-map').style.pointerEvents = "none"
     })
-
-    let msg = document.getElementById('msg')
-    msg.innerText = calcDistance( )
-
-
-
-
   });
-
-
-  
-
 }
 
+let playAgain = document.getElementById('play-again')
+playAgain.addEventListener('click', () => {
+  let msg = document.getElementById('msg')
+  msg.innerText = ``
+  document.getElementById('guess-map').style.pointerEvents = "auto"
+  initMap()
+})
 
 
 
-// function calcDistance (pointA, pointB) { // point = {lat: lat, lon: lon}
-//   // This uses the ‘haversine’ formula to calculate the great-circle distance between two points – that is, the shortest distance over the earth’s surface – giving an ‘as-the-crow-flies’ distance between the points.
-//   // Haversine formula:	a = sin²(Δφ/2) + cos φ1 ⋅ cos φ2 ⋅ sin²(Δλ/2)
-//   // c = 2 ⋅ atan2( √a, √(1−a) )
-//   // d = R ⋅ c
-//   // where	φ is latitude, λ is longitude, R is earth’s radius 
-//   // const R = 6371e3; // mean r of earth in metres
-//   const R = 3958.8; // mean r of earth in miles
-
-//   // convert to radians
-//   const phi1 = pointA.lat * Math.PI/180; 
-//   const phi2 = pointB.lat * Math.PI/180;
-
-//   const deltaPhi = (pointB.lat-pointA.lat) * Math.PI/180;
-//   const deltaLambda = (pointB.lon-pointA.lon) * Math.PI/180;
-
-//   const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + // squared
-//             Math.cos(phi1) * Math.cos(phi2) *
-//             Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2); // squared
-//   // the great circle is the plane in which the two points and center go through the sphere
-//   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); // great circle distance in radians
-
-//   const d = R * c; // in miles
-//   return d
-// }
-
-function haversine_distance(mk1, mk2) {
+function calcDistance(mk1, mk2) {
+  //   // This uses the ‘haversine’ formula to calculate the great-circle distance between two points – that is, the shortest distance over the earth’s surface – giving an ‘as-the-crow-flies’ distance between the points.
+  //   // Haversine formula:	a = sin²(Δφ/2) + cos φ1 ⋅ cos φ2 ⋅ sin²(Δλ/2)
+  //   // c = 2 ⋅ atan2( √a, √(1−a) )
+  //   // d = R ⋅ c
+  //   // where	φ is latitude, λ is longitude, R is earth’s radius 
   var R = 3958.8; // Radius of the Earth in miles
-  var rlat1 = mk1.position.lat() * (Math.PI/180); // Convert degrees to radians
-  var rlat2 = mk2.position.lat() * (Math.PI/180); // Convert degrees to radians
+  var rlat1 = mk1.lat() * (Math.PI/180); // Convert degrees to radians
+  var rlat2 = mk2.lat() * (Math.PI/180); // Convert degrees to radians
   var difflat = rlat2-rlat1; // Radian difference (latitudes)
-  var difflon = (mk2.position.lng()-mk1.position.lng()) * (Math.PI/180); // Radian difference (longitudes)
-
+  var difflon = (mk2.lng()-mk1.lng()) * (Math.PI/180); // Radian difference (longitudes)
   var d = 2 * R * Math.asin(Math.sqrt(Math.sin(difflat/2)*Math.sin(difflat/2)+Math.cos(rlat1)*Math.cos(rlat2)*Math.sin(difflon/2)*Math.sin(difflon/2)));
-  return d;
+  return Math.floor(d);
+}
+
+function calcMidpoint(mk1, mk2){
+  let lat = (mk1.lat() + mk2.lat())/2
+  let lon = (mk1.lng() + mk2.lng())/2
+  return new google.maps.LatLng(lat, lon)
 }
 
